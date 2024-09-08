@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signals and Systems Memorization Tests</title>
+    
+    <!-- Google Fonts - Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- MathJax for LaTeX rendering -->
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #bb95dd;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            border: 3px solid #7614bc; /* Light purple */
+            border-radius: 8px;
+            max-width: 600px;
+            background-color: rgb(255, 255, 255);
+        }
+        h1 {
+            font-size: 2em;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        label {
+            font-size: 1.2em;
+        }
+        input[type="text"] {
+            width: 90%;
+            padding: 10px;
+            font-size: 1.2em;
+            margin: 10px 0 20px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #7700ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin: 10px;
+        }
+        p {
+            font-size: 1.2em;
+        }
+        #wolfram-result {
+            display: block;
+            margin: 20px auto;
+            border: 1px solid #D8BFD8; /* Border around the result image */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Signals and Systems Memorization Tests</h1>
+
+    <!-- Placeholder for Question -->
+    <p id="question">What is <span id="description"></span>, Left Hand Side: <span id="lhs-equation"></span></p>
+
+    <!-- Input form to get the user's Wolfram Language equation -->
+    <div>
+        <label for="input-answer">Enter full formula/equation (LHS&RHS) (Wolfram Language):</label>
+        <input type="text" id="input-answer" placeholder="e.g. sin(2*a) == 2*sin(a)*cos(a)">
+    </div>
+
+    <button id="submit-button" onclick="submitToWolfram()">Submit</button>
+    <button id="next-button" onclick="nextQuestion()" style="display:none;">Next Question</button>
+
+    <p><strong>Result:</strong></p>
+    <img id="wolfram-result" alt="Powered by Wolfram Alpha" />
+</div>
+
+<script>
+// Wolfram Alpha API credentials
+const WOLFRAM_APP_ID = 'TYVRYP-AUJEAP8EHA'; // Your Simple API key
+
+// Example database of questions with descriptions and left-hand side (in LaTeX)
+const formulaDB = [
+    { description: "the Double Angle Sine Law", lhs: "\\sin(2a)" },
+    { description: "the Pythagorean Identity", lhs: "\\cos^2(a)+\\sin^2(a)" },
+    { description: "Euler's Formula", lhs: "e^{i\\theta}" },
+    { description: "the Double Angle Cosine Law", lhs: "\\cos(2a)" },
+    { description: "the Cosine of Sum Formula", lhs: "\\cos(a+b)" },
+    { description: "the Sine of Sum Formula", lhs: "\\sin(a+b)" },
+    { description: "this trig value", lhs: "\\cos(0)" },
+    { description: "this trig value", lhs: "\\cos(\\pi/6)" },
+    { description: "this trig value", lhs: "\\cos(\\pi/4)" },
+    { description: "this trig value", lhs: "\\cos(\\pi/3)" },
+    { description: "this trig value", lhs: "\\cos(\\pi/2)" },
+    { description: "this trig value", lhs: "\\sin(0)" },
+    { description: "this trig value", lhs: "\\sin(\\pi/6)" },
+    { description: "this trig value", lhs: "\\sin(\\pi/4)" },
+    { description: "this trig value", lhs: "\\sin(\\pi/3)" },
+    { description: "this trig value", lhs: "\\sin(\\pi/2)" },
+    { description: "this trig value", lhs: "\\sin(\\pi/2)" },
+    { description: "the Even Property of Cosine", lhs: "\\cos(-a)" },
+    { description: "the Odd Property of Sine", lhs: "\\sin(-a)" },
+    { description: "the definition of the imaginary unit", lhs: "\\i=?" },
+    { description: "the product of a complex number and its conjugate", lhs: "z \\cdot \\bar z" },
+    { description: "the real part of a complex number in terms of the complex number and its conjugate", lhs: "Re(z)" },
+    { description: "the imaginary part of a complex number in terms of the complex number and its conjugate", lhs: "Im(z)" },
+    { description: "the Euler-formula expansion of cosine", lhs: "\\cos(\\phi)" },
+    { description: "the Euler-formula expansion of sine", lhs: "\\sin(\\phi)" },
+    { description: "the logarithmic form of exponentiation", lhs: "a^b" },
+    { description: "the Difference of Squares Formula", lhs: "a^2-b^2" },
+    { description: "the formula for Completing the Square", lhs: "ax^2+bx+c" },
+    
+];
+
+let remainingQuestions = [...formulaDB];  // Copy of the formulaDB for tracking remaining questions
+
+// Load a random question from the database
+function loadRandomQuestion() {
+    if (remainingQuestions.length === 0) {
+        remainingQuestions = [...formulaDB]; // Reset when all questions are used
+    }
+
+    // Pick a random question from the remainingQuestions
+    const randomIndex = Math.floor(Math.random() * remainingQuestions.length);
+    const currentQuestion = remainingQuestions.splice(randomIndex, 1)[0]; // Remove the selected question from the list
+
+    // Update the question display
+    document.getElementById('description').innerText = currentQuestion.description;
+    document.getElementById('lhs-equation').innerHTML = `\\(${currentQuestion.lhs}\\)`;
+    MathJax.typesetPromise(); // Re-render MathJax after updating the LaTeX
+}
+
+// Function to submit the user's answer to Wolfram Alpha Simple API
+function submitToWolfram() {
+    const userAnswer = document.getElementById('input-answer').value;
+
+    if (!userAnswer) {
+        alert("Please enter an equation.");
+        return;
+    }
+
+    // Encode the user input to make it URL-friendly
+    const encodedAnswer = encodeURIComponent(userAnswer);
+
+    // Build the Wolfram Alpha Simple API query URL
+    const wolframUrl = `http://api.wolframalpha.com/v1/simple?appid=${WOLFRAM_APP_ID}&i=${encodedAnswer}`;
+
+    // Set the result image source to the Wolfram API URL (the image result)
+    document.getElementById('wolfram-result').src = wolframUrl;
+
+    // Show the "Next" button after submitting
+    document.getElementById('next-button').style.display = "inline-block";
+}
+
+// Function to load the next question when the "Next" button is clicked
+function nextQuestion() {
+    document.getElementById('input-answer').value = '';  // Clear input field
+    document.getElementById('wolfram-result').src = '';  // Clear previous result
+    document.getElementById('next-button').style.display = "none";  // Hide "Next" button
+    loadRandomQuestion();
+}
+
+// Load the first random question when the page loads
+loadRandomQuestion();
+
+</script>
+
+</body>
+</html>
+
